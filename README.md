@@ -70,6 +70,17 @@ bash scripts/make_splits.sh
 GPUS=1,2,3,4 NPROC=4 EXPORT_ONNX=0 bash scripts/run_candidate_tmux.sh mobileclip2_s4 0
 ```
 
+## Sprint 2 Multi-Task Training
+
+The Sprint 2 training path uses MobileCLIP2-S4 with classification, image-text contrastive learning, and `confusing_with` hard-negative loss.
+
+```bash
+export DATA_ROOT=/workspace/landmark-assistant-model/Dataset
+GPUS=1,2,3,4 NPROC=4 bash scripts/run_multitask_tmux.sh mobileclip2_s4_partial_unfreeze_ce_hardneg 0
+```
+
+Implementation notes and output files are documented in `docs/MULTITASK_TRAINING_IMPLEMENTATION.md`.
+
 Run all candidates/folds sequentially:
 
 ```bash

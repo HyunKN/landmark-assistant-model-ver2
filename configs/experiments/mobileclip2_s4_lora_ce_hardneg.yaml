@@ -1,0 +1,89 @@
+model:
+  id: "mobileclip2_s4_multitask_lora_ce_hardneg"
+  family: "mobileclip2"
+  model_name: "MobileCLIP2-S4"
+  pretrained: "dfndr2b"
+  train_method: "lora"
+  note: "Sprint2 comparison: frozen MobileCLIP2-S4 base + LoRA adapters on image/text towers."
+  lora:
+    rank: 8
+    alpha: 16
+    dropout: 0.05
+    include_patterns: []
+    exclude_patterns: []
+
+training:
+  image_size: 224
+  epochs: 30
+  batch_size_per_gpu: 8
+  embedding_dim: 512
+  warmup_epochs: 2
+  min_lr_ratio: 0.01
+  aug_random_resized_crop_min_scale: 0.8
+  aug_randaugment_num_ops: 2
+  aug_randaugment_magnitude: 5
+  image_mean:
+    - 0.48145466
+    - 0.4578275
+    - 0.40821073
+  image_std:
+    - 0.26862954
+    - 0.26130258
+    - 0.27577711
+
+data:
+  strategy: "locked_test_plus_5fold_trainval"
+  seed: 20260513
+  folds: 5
+  test_ratio: 0.15
+  supervised_filter: "label_status == confirmed and training_role in train_positive/low_weight_positive"
+  caption_languages:
+    - "ko"
+    - "en"
+  max_captions_per_image: 6
+  class_balance_strategy: "sqrt_weighted"
+
+loss:
+  classification:
+    type: "cross_entropy"
+    weight: 1.0
+    label_smoothing: 0.05
+    margin: 0.2
+    scale: 30.0
+  image_text_contrastive:
+    enabled: true
+    weight: 0.3
+    temperature: 0.07
+    positive_rule: "same landmark_id image-caption pairs are positives"
+  hard_negative:
+    enabled: true
+    weight: 0.1
+    margin: 0.1
+    source: "labels.json confusing_with"
+
+optimizer:
+  type: "adamw"
+  encoder_lr: 0.0001
+  projection_lr: 0.0005
+  head_lr: 0.001
+  weight_decay: 0.05
+  lr_scheduler: "cosine"
+
+evaluation:
+  primary_metric: "val_top1_accuracy"
+  tie_breaker: "val_top3_accuracy"
+  low_margin_threshold: 0.05
+  outputs:
+    - "metrics.json"
+    - "predictions_val.jsonl"
+    - "predictions_test.jsonl"
+    - "predictions_text_queries.jsonl"
+    - "low_margin_val.csv"
+    - "low_margin_test.csv"
+
+runtime:
+  gpu_count: 4
+  precision: "fp16_amp"
+  num_workers: 8
+  tracker: "wandb"
+  backup: "rclone gdrive:"
