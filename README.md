@@ -1,19 +1,24 @@
-# jongno-landmark-model-candidates
+# landmark-assistant-model-ver2
 
-Unified Sprint 1 candidate training repo for Jongno landmark recognition.
+Unified Landmark Assistant model training repo.
 
 This is the preferred GitHub repository layout. It keeps one shared training/evaluation codebase and separates model candidates by config.
 
-## Project Docs Site
+## Project Docs
 
-The shareable Sprint 1 project docs are available from the repository root for Vercel static hosting.
-The same files are also kept under `site/` as the source snapshot.
+Shared project documentation is managed in the separate docs workspace:
 
-```bash
-python scripts/verify_docs.py
+```text
+C:\Users\hi\Downloads\종설_작업중\landmark-assistant\docs
 ```
 
-Vercel should use the repository root. `vercel.json` sets the framework to `Other` and rewrites `/` to `index.html`.
+Published docs:
+
+```text
+https://landmark-assistant-sprint1.vercel.app/
+```
+
+Keep this repository focused on training code, configs, scripts, and run outputs. Do not add the Vercel docs site or demo app copy here.
 
 ## Candidates
 
@@ -56,8 +61,8 @@ The split manifest records `dataset_fingerprint`, total records, class counts, a
 ## Server Quickstart
 
 ```bash
-git clone <repo-url>
-cd jongno-landmark-model-candidates
+git clone https://github.com/HyunKN/landmark-assistant-model-ver2.git
+cd landmark-assistant-model-ver2
 
 bash scripts/setup_venv.sh
 source .venv/bin/activate
@@ -79,7 +84,11 @@ export DATA_ROOT=/workspace/landmark-assistant-model/Dataset
 GPUS=1,2,3,4 NPROC=4 bash scripts/run_multitask_tmux.sh mobileclip2_s4_partial_unfreeze_ce_hardneg 0
 ```
 
-Implementation notes and output files are documented in `docs/MULTITASK_TRAINING_IMPLEMENTATION.md`.
+Implementation notes and output files are documented in the central docs:
+
+```text
+https://landmark-assistant-sprint1.vercel.app/operations/multitask-model-training-implementation-2026-05-21.html
+```
 
 After a multi-task run finishes, mine review candidates for the next `confusing_with` update:
 
