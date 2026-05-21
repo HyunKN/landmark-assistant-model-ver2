@@ -2,7 +2,7 @@
 
 Date: 2026-05-21
 
-This document records the Sprint 2 model-training implementation added to `landmark-assistant-model`.
+This document records the Sprint 2 model-training implementation added to `landmark-assistant-model-ver2`.
 
 ## Why This Was Added
 
@@ -43,6 +43,7 @@ src/landmark_candidate/multitask_dataset.py
 src/landmark_candidate/multitask_model.py
 src/landmark_candidate/train_multitask.py
 scripts/run_multitask_tmux.sh
+scripts/mine_hard_negative_candidates.py
 configs/experiments/mobileclip2_s4_partial_unfreeze_ce_hardneg.yaml
 configs/experiments/mobileclip2_s4_lora_ce_hardneg.yaml
 configs/experiments/mobileclip2_s4_partial_unfreeze_arcface_hardneg.yaml
@@ -107,6 +108,42 @@ Important fields:
 - `val.hard_case_top1_accuracy`: accuracy on records with `confusing_with`.
 - `val.low_margin_count`: number of cases where Top-1 and Top-2 are too close.
 - `text_query_retrieval`: text-query retrieval check using `landmark_text_catalog_v2.json` when available.
+
+## Hard-negative Candidate Mining
+
+After a run finishes, mine the model's actual confusion and low-margin cases:
+
+```bash
+python scripts/mine_hard_negative_candidates.py \
+  --run-dir runs/<run_name> \
+  --low-margin-threshold 0.05
+```
+
+This reads:
+
+```text
+runs/<run_name>/
+  predictions_val.jsonl
+  predictions_test.jsonl
+  low_margin_val.csv
+  low_margin_test.csv
+```
+
+It writes:
+
+```text
+runs/<run_name>/
+  hard_negative_candidates.json
+  hard_negative_candidates.csv
+```
+
+The miner combines three signals:
+
+- **confusion matrix evidence**: the model predicts another landmark as Top-1.
+- **low-margin evidence**: Top-1 and Top-2 are close, so the result is fragile.
+- **nearest negative evidence**: the nearest non-target Top-3 class is repeatedly close.
+
+The output is a review list, not an automatic label mutation. A human should inspect the examples, then decide whether to add the suggested pair to `confusing_with` in `labels.json`.
 
 ## Dataset Requirements
 

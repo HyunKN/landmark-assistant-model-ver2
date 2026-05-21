@@ -81,6 +81,12 @@ GPUS=1,2,3,4 NPROC=4 bash scripts/run_multitask_tmux.sh mobileclip2_s4_partial_u
 
 Implementation notes and output files are documented in `docs/MULTITASK_TRAINING_IMPLEMENTATION.md`.
 
+After a multi-task run finishes, mine review candidates for the next `confusing_with` update:
+
+```bash
+python scripts/mine_hard_negative_candidates.py --run-dir runs/<run_name> --low-margin-threshold 0.05
+```
+
 Run all candidates/folds sequentially:
 
 ```bash
