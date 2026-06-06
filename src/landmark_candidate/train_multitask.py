@@ -379,9 +379,10 @@ def train_one_epoch(
     totals = Counter()
     sample_count = 0
     iterator = tqdm(loader, disable=not is_main(), desc="train")
-    for batch in iterator:
+    grad_accum_steps = max(1, int(cfg.get("runtime", {}).get("grad_accum_steps", 1)))
+    optimizer.zero_grad(set_to_none=True)
+    for step_idx, batch in enumerate(iterator):
         batch = move_batch(batch, device)
-        optimizer.zero_grad(set_to_none=True)
         base_model = model.module if isinstance(model, DDP) else model
         tokenized = base_model.tokenize(batch.caption_texts, device) if batch.caption_texts else None
         with torch.cuda.amp.autocast(enabled=torch.cuda.is_available()):
@@ -403,11 +404,15 @@ def train_one_epoch(
                 hard_loss = output.logits.sum() * 0.0
             loss = cls_weight * cls_loss + contrastive_weight * contrast_loss + hard_weight * hard_loss
 
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
-        if scheduler is not None:
-            scheduler.step()
+        scaled_loss = loss / grad_accum_steps
+        scaler.scale(scaled_loss).backward()
+        should_step = (step_idx + 1) % grad_accum_steps == 0 or (step_idx + 1) == len(loader)
+        if should_step:
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad(set_to_none=True)
+            if scheduler is not None:
+                scheduler.step()
         batch_size = batch.labels.numel()
         sample_count += batch_size
         totals["loss"] += float(loss.item()) * batch_size
@@ -477,8 +482,10 @@ def main() -> None:
         base_model.trainable_parameter_groups(cfg),
         weight_decay=float(optimizer_cfg.get("weight_decay", 0.05)),
     )
+    grad_accum_steps = max(1, int(cfg.get("runtime", {}).get("grad_accum_steps", 1)))
+    scheduler_steps_per_epoch = max(1, math.ceil(len(train_loader) / grad_accum_steps))
     scheduler_cfg = {"training": {**cfg.get("training", {}), "lr_scheduler": optimizer_cfg.get("lr_scheduler", "cosine")}}
-    scheduler = build_scheduler(optimizer, scheduler_cfg, len(train_loader))
+    scheduler = build_scheduler(optimizer, scheduler_cfg, scheduler_steps_per_epoch)
     scaler = torch.cuda.amp.GradScaler(enabled=torch.cuda.is_available())
     class_weights = class_weight_tensor(train_records, class_to_idx, balance_strategy, device)
 
