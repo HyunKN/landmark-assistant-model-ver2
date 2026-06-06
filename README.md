@@ -9,7 +9,7 @@ This is the preferred GitHub repository layout. It keeps one shared training/eva
 Shared project documentation is managed in the separate docs workspace:
 
 ```text
-C:\Users\hi\Downloads\종설_작업중\landmark-assistant\docs
+landmark-assistant\docs
 ```
 
 Published docs:
@@ -95,6 +95,28 @@ After a multi-task run finishes, mine review candidates for the next `confusing_
 ```bash
 python scripts/mine_hard_negative_candidates.py --run-dir runs/<run_name> --low-margin-threshold 0.05
 ```
+
+## Local S3/S4 Checks
+
+Use local runs to check that MobileCLIP2-S3/S4 can load, run forward/backward, produce metrics, and expose memory limits before moving final comparisons to the server.
+
+```powershell
+cd C:\Users\hi\Downloads\종설_작업중\landmark-assistant-model-ver2
+.\scripts\run_rtx2060_multitask.ps1 -DataRoot D:\Dataset_0601 -ContinueOnError
+```
+
+Run probe and full 30 epoch configs:
+
+```powershell
+.\scripts\run_rtx2060_multitask.ps1 -DataRoot D:\Dataset_0601 -Full -ContinueOnError
+```
+
+Configs:
+
+- `configs/experiments/mobileclip2_s3_rtx2060_probe.yaml`
+- `configs/experiments/mobileclip2_s4_rtx2060_probe.yaml`
+- `configs/experiments/mobileclip2_s3_rtx2060_full.yaml`
+- `configs/experiments/mobileclip2_s4_rtx2060_full.yaml`
 
 Run all candidates/folds sequentially:
 
