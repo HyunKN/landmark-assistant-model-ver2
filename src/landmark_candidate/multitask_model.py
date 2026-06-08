@@ -24,6 +24,12 @@ class LoRALinear(nn.Module):
         nn.init.kaiming_uniform_(self.lora_down.weight, a=5**0.5)
         nn.init.zeros_(self.lora_up.weight)
 
+    def __getattr__(self, name: str):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.base, name)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.base(x) + self.lora_up(self.lora_down(self.dropout(x))) * self.scale
 

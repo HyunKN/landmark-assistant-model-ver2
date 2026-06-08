@@ -1,17 +1,17 @@
 model:
-  id: "mobileclip2_s3_rtx2060_full"
+  id: "mobileclip2_s3_server_full"
   family: "mobileclip2"
   model_name: "MobileCLIP2-S3"
   pretrained: "dfndr2b"
   train_method: "partial_unfreeze"
   image_unfreeze_ratio: 0.20
   text_unfreeze_ratio: 0.10
-  note: "RTX 2060 6GB full local run: S3 partial image/text unfreeze + CE + contrastive + hard-negative."
+  note: "Server full run: S3 partial image/text unfreeze + CE + contrastive + hard-negative."
 
 training:
   image_size: 224
   epochs: 30
-  batch_size_per_gpu: 2
+  batch_size_per_gpu: 8
   embedding_dim: 512
   warmup_epochs: 2
   min_lr_ratio: 0.01
@@ -28,7 +28,7 @@ data:
   test_ratio: 0.15
   supervised_filter: "label_status == confirmed and training_role in train_positive/low_weight_positive"
   caption_languages: ["ko", "en"]
-  max_captions_per_image: 2
+  max_captions_per_image: 6
   class_balance_strategy: "sqrt_weighted"
 
 loss:
@@ -38,11 +38,13 @@ loss:
     label_smoothing: 0.05
     margin: 0.2
     scale: 30.0
+
   image_text_contrastive:
     enabled: true
     weight: 0.3
     temperature: 0.07
     positive_rule: "same landmark_id image-caption pairs are positives"
+
   hard_negative:
     enabled: true
     weight: 0.1
@@ -64,8 +66,8 @@ evaluation:
   outputs: ["metrics.json", "predictions_val.jsonl", "predictions_test.jsonl", "predictions_text_queries.jsonl", "low_margin_val.csv", "low_margin_test.csv"]
 
 runtime:
-  gpu_count: 1
+  gpu_count: 4
   precision: "fp16_amp"
-  num_workers: 2
-  grad_accum_steps: 16
+  num_workers: 8
+  grad_accum_steps: 1
   tracker: "wandb"
